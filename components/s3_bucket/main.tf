@@ -1,0 +1,39 @@
+# A private bucket: no public access, SSE-S3, TLS only.
+
+resource "aws_s3_bucket" "this" {
+  bucket        = var.name
+  force_destroy = var.force_destroy # true: destroy deletes every object too; false: destroy stops at a non-empty bucket
+}
+
+resource "aws_s3_bucket_public_access_block" "this" {
+  bucket                  = aws_s3_bucket.this.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
+  bucket = aws_s3_bucket.this.id
+  rule {
+    apply_server_side_encryption_by_default { sse_algorithm = "AES256" } # SSE-S3, no KMS cost
+  }
+}
+
+# TLS only: any request over plain HTTP is denied. Principal "*" here means "whoever asks" in a Deny,
+# so it grants nothing; the public access block above stays satisfied.
+resource "aws_s3_bucket_policy" "this" {
+  bucket = aws_s3_bucket.this.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid       = "DenyInsecureTransport"
+      Effect    = "Deny"
+      Principal = "*"
+      Action    = "s3:*"
+      Resource  = [aws_s3_bucket.this.arn, "${aws_s3_bucket.this.arn}/*"]
+      Condition = { Bool = { "aws:SecureTransport" = "false" } }
+    }]
+  })
+  depends_on = [aws_s3_bucket_public_access_block.this]
+}
