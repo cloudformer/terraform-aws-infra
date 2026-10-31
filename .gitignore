@@ -7,3 +7,4 @@ real-*.json
 .build/
 __pycache__/
 .DS_Store
+.smoke/

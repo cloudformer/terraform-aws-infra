@@ -1,9 +1,6 @@
-# A minimal s3rds deployment. Your own project would use the Registry source instead of the path:
-#   source  = "cloudformer/infra/aws//modules/s3rds"
-#   version = "~> 0.1"
-#
-#   export TF_VAR_db_password='a-long-password-16+'
-#   terraform -chdir=examples/s3rds init && terraform -chdir=examples/s3rds apply
+# A minimal s3rds deployment.
+# export TF_VAR_db_password='a-long-password-16+'
+# terraform -chdir=examples/s3rds init && terraform -chdir=examples/s3rds apply
 
 terraform {
   required_version = ">= 1.5"
@@ -23,7 +20,10 @@ variable "db_password" {
 }
 
 module "db" {
-  source = "../../modules/s3rds"
+  source  = "cloudformer/infra/aws//modules/s3rds" # stable: a released version
+  version = "~> 0.1"
+  # source  = "github.com/cloudformer/terraform-aws-infra//modules/s3rds?ref=main" # latest: the main branch, not released yet
+  # source  = "../../modules/s3rds"                                                # local: this repo's code
 
   project_name          = "s3rds-example"
   console_auth_username = "admin"
