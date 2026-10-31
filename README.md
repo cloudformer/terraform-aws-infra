@@ -1,6 +1,6 @@
 # terraform-aws-infra
 
-Terraform modules for the Redefine AWS Serverless series, published on the Terraform Registry as
+Terraform modules for the [IdleFree](https://cloudformer.github.io/) series, published on the Terraform Registry as
 `cloudformer/infra/aws`. Call a project with `source = "cloudformer/infra/aws//modules/<project>"`.
 
 | Project | What |

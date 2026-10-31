@@ -1,6 +1,6 @@
 # terraform-aws-infra — working notes for Claude
 
-The Terraform modules of the **Redefine AWS Serverless** series (github.com/cloudformer), published on the
+The Terraform modules of the **IdleFree** series (https://cloudformer.github.io), published on the
 public Terraform Registry as `cloudformer/infra/aws`. One repository for every project's infrastructure; a
 user calls one project module and passes a few variables:
 

@@ -2,7 +2,7 @@
 
 A serverless MySQL / PostgreSQL / SQLite-compatible database on AWS Lambda and Amazon S3: each database is one
 SQLite file on S3, a Lambda Function URL is the endpoint, and it costs ≈ $0 when idle.
-Project: [cloudformer/s3rds](https://github.com/cloudformer/s3rds).
+Project: [cloudformer/s3rds](https://github.com/cloudformer/s3rds) · part of [IdleFree](https://cloudformer.github.io/).
 
 ![architecture](https://raw.githubusercontent.com/cloudformer/s3rds/main/docs/architecture.svg)
 
