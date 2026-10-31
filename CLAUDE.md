@@ -21,7 +21,10 @@ main.tf          empty: the Registry requires a root module; nobody calls it
 modules/<p>/     one per project: the public entry, shown on the Registry. Composes components/,
                  pins the project's package (e.g. s3rds[server]==0.3.4). README.md = the usage docs.
 components/<c>/  building blocks used by modules/*: s3_bucket, lambda, (dynamodb_table, iam_role … when needed)
-examples/<p>/    a minimal call of modules/<p>; also how a module is tested before a tag
+examples/<p>/    a minimal call of modules/<p> (how to use it; the smoke test deploys it)
+tests/mock/      <p>.tftest.hcl: terraform test with mocked providers, plan only, no AWS
+tests/smoke/     <p>.py: run against the deployed examples/<p>
+Makefile         test / smoke P=<p> / release V=vX.Y.Z
 ```
 
 ## Principles
@@ -58,8 +61,23 @@ examples/<p>/    a minimal call of modules/<p>; also how a module is tested befo
 - English everywhere.
 - Version tags are Frank's call; never propose a number.
 
+## Tests
+
+| | mock (`make test`) | smoke (`make smoke P=<p>`) |
+|---|---|---|
+| Question | is the plan right? (endpoints, names, IAM scope, rejected input, public surface) | does a real deployment work? |
+| How | `terraform test` on `tests/mock/`, providers mocked; seconds, no AWS | apply `examples/<p>`, run `tests/smoke/<p>.py`, destroy |
+| When | every change; CI on every push / PR to main | before a release, for the projects it touches |
+| Scope | always all of `tests/mock/` | changed projects; a changed component smokes every module using it |
+
+- One file per project on each side, same name: `tests/mock/<p>.tftest.hcl`, `tests/smoke/<p>.py`.
+- Components are covered through the modules that use them. A component gets its own
+  `tests/mock/<c>_component.tftest.hcl` only when a branch of it is used by no module, or it is shared by
+  three or more modules.
+
 ## Release
 
 1. Change a module or component; for a new package version, move the `<project>_version` default in `modules/<p>`.
-2. `terraform -chdir=examples/<p> init && terraform -chdir=examples/<p> apply`, test, `destroy`.
-3. Commit, `git tag vX.Y.Z && git push --tags` — the Registry picks the tag up by webhook.
+2. Commit and push; CI runs the mock tests.
+3. `AWS_PROFILE=… TF_VAR_…=… make release V=vX.Y.Z`: mock tests, smoke tests, then tag + push — the Registry
+   picks the tag up by webhook.
