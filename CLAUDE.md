@@ -19,7 +19,7 @@ module "db" {
 ```
 main.tf          empty: the Registry requires a root module; nobody calls it
 modules/<p>/     one per project: the public entry, shown on the Registry. Composes components/,
-                 pins the project's package (e.g. s3rds[server]==0.3.4). README.md = the usage docs.
+                 pins the project's package (e.g. s3rds[server]==0.3.5). README.md = the usage docs.
 components/<c>/  building blocks used by modules/*: s3_bucket, lambda, (dynamodb_table, iam_role … when needed)
 examples/<p>/    a minimal call of modules/<p> from the Registry (stable); latest / local sources as comments.
                  make smoke deploys a copy in .smoke/<p>/ with source = this repo's modules/<p>

@@ -27,11 +27,11 @@ variable "console_auth_password" {
 variable "s3rds_version" {
   description = "s3rds release deployed from PyPI (s3rds[server]==<version>). The default is the version this module was tested with; set another to upgrade without a new module version."
   type        = string
-  default     = "0.3.4"
+  default     = "0.3.5"
 
   validation {
     condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+$", var.s3rds_version))
-    error_message = "s3rds_version: X.Y.Z, e.g. 0.3.4."
+    error_message = "s3rds_version: X.Y.Z, e.g. 0.3.5."
   }
 }
 

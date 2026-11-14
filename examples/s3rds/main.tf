@@ -30,7 +30,7 @@ module "db" {
   console_auth_password = var.db_password
 
   # optional, defaults shown
-  # s3rds_version     = "0.3.4"
+  # s3rds_version     = "0.3.5"
   # console           = true
   # function_url_auth = "NONE"
   # db_ro             = true
