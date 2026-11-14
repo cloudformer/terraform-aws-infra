@@ -77,6 +77,10 @@ set it to move to a newer s3keepass without waiting for a new module version.
 ## Notes
 
 - `force_destroy` defaults to `false`: `terraform destroy` stops at a bucket that still holds vaults. Download
-  what you want to keep, set it to `true`, apply, then destroy.
+  what you want to keep, set it to `true`, **apply**, then destroy — destroy uses the value in the state, so
+  setting it and destroying right away still stops.
+- Moving from a deployment whose Lambda created its own log group (`logs:CreateLogGroup`): apply stops with
+  `ResourceAlreadyExistsException` for `/aws/lambda/<project_name>-lambda`. Take it over, then apply again:
+  `terraform import 'module.<name>.module.server.aws_cloudwatch_log_group.this' /aws/lambda/<project_name>-lambda`.
 - `project_name` must be unique per AWS account; it names every resource.
 - Inputs and outputs: see the Inputs / Outputs tabs on the Registry.
