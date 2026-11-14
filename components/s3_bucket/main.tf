@@ -1,8 +1,17 @@
-# A private bucket: no public access, SSE-S3, TLS only.
+# A private bucket: no public access, SSE-S3, TLS only; optionally versioned.
 
 resource "aws_s3_bucket" "this" {
   bucket        = var.name
   force_destroy = var.force_destroy # true: destroy deletes every object too; false: destroy stops at a non-empty bucket
+}
+
+# versioning = true: every overwrite or delete keeps the previous object as a noncurrent version
+resource "aws_s3_bucket_versioning" "this" {
+  count  = var.versioning ? 1 : 0
+  bucket = aws_s3_bucket.this.id
+  versioning_configuration {
+    status = "Enabled"
+  }
 }
 
 resource "aws_s3_bucket_public_access_block" "this" {

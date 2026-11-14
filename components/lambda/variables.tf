@@ -11,6 +11,17 @@ variable "runtime" {
   type = string
 }
 
+variable "architecture" {
+  description = "Instruction set: x86_64 or arm64 (Graviton, about 20% cheaper per GB-second)."
+  type        = string
+  default     = "x86_64"
+
+  validation {
+    condition     = contains(["x86_64", "arm64"], var.architecture)
+    error_message = "architecture must be x86_64 or arm64."
+  }
+}
+
 variable "filename" {
   description = "The deployment zip."
   type        = string

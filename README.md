@@ -6,6 +6,7 @@ Terraform modules for the [IdleFree](https://cloudformer.github.io/) series, pub
 | Project | What |
 |---|---|
 | [s3rds](modules/s3rds) | Serverless MySQL / PostgreSQL / SQLite-compatible database on Lambda + S3 |
+| [s3keepass](modules/s3keepass) | KeePass vaults (.kdbx) on S3 with a web UI; decrypted only in the browser |
 
 ## Layout
 
