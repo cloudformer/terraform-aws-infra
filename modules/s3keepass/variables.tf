@@ -49,11 +49,11 @@ variable "cloudflare_auth" {
 variable "s3keepass_version" {
   description = "s3keepass release deployed from PyPI (s3keepass==<version>). The default is the version this module was tested with; set another to upgrade without a new module version."
   type        = string
-  default     = "0.1.2"
+  default     = "0.1.3"
 
   validation {
     condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+$", var.s3keepass_version))
-    error_message = "s3keepass_version: X.Y.Z, e.g. 0.1.2."
+    error_message = "s3keepass_version: X.Y.Z, e.g. 0.1.3."
   }
 }
 
