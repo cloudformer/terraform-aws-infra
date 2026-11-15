@@ -25,13 +25,23 @@ module "keepass" {
   # source  = "github.com/cloudformer/terraform-aws-infra//modules/s3keepass?ref=main" # latest: the main branch, not released yet
   # source  = "../../modules/s3keepass"                                                # local: this repo's code
 
-  project_name          = "s3keepass-example"
-  console_auth_username = "admin"
-  console_auth_password = var.console_password
-  force_destroy         = true # an example: destroy removes the vaults too
+  project_name  = "s3keepass-example"
+  force_destroy = true # an example: destroy removes the vaults too
+
+  # sign-in: any method that is on lets a request in; at least one must be on
+  http_auth = {
+    enabled  = true
+    username = "admin"
+    password = var.console_password
+  }
+  cloudflare_auth = {
+    enabled = false
+    team    = "myteam"    # <team>.cloudflareaccess.com
+    aud     = "CHANGE-ME" # the Access application's AUD tag
+  }
 
   # optional, defaults shown
-  # s3keepass_version  = "0.1.1"
+  # s3keepass_version  = "X.Y.Z"  # unset: the s3keepass release this module version ships with
   # bucket             = null   # <project_name>-vaults-<account id>
   # console            = true
   # function_url_auth  = "NONE"

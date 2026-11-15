@@ -26,9 +26,8 @@ mock_provider "archive" {
 }
 
 variables {
-  project_name          = "test"
-  console_auth_username = "admin"
-  console_auth_password = "a-password-of-16+chars"
+  project_name = "test"
+  http_auth    = { enabled = true, username = "admin", password = "a-password-of-16+chars" }
 }
 
 # Defaults: bucket <project>-vaults-<account>, versioned; one arm64 function; the custom template is {} (base as is).
@@ -110,10 +109,60 @@ run "short_password_rejected" {
   }
 
   variables {
-    console_auth_password = "short"
+    http_auth = { enabled = true, username = "admin", password = "short" }
   }
 
-  expect_failures = [var.console_auth_password]
+  expect_failures = [var.http_auth]
+}
+
+# Cloudflare alone is a valid sign-in: no user or password needed.
+run "cloudflare_alone" {
+  command = plan
+
+  module {
+    source = "./modules/s3keepass"
+  }
+
+  variables {
+    http_auth       = { enabled = false }
+    cloudflare_auth = { enabled = true, team = "myteam", aud = "aud-tag" }
+  }
+
+  assert {
+    condition     = module.server.function_name == "test-lambda"
+    error_message = "cloudflare_auth alone should plan"
+  }
+}
+
+# Cloudflare on without its aud is refused at plan time.
+run "cloudflare_without_aud_rejected" {
+  command = plan
+
+  module {
+    source = "./modules/s3keepass"
+  }
+
+  variables {
+    cloudflare_auth = { enabled = true, team = "myteam" }
+  }
+
+  expect_failures = [var.cloudflare_auth]
+}
+
+# No sign-in method on is refused at plan time: a vault page is never deployed open.
+run "no_sign_in_rejected" {
+  command = plan
+
+  module {
+    source = "./modules/s3keepass"
+  }
+
+  variables {
+    http_auth       = { enabled = false, username = "admin", password = "a-password-of-16+chars" }
+    cloudflare_auth = { enabled = false }
+  }
+
+  expect_failures = [var.cloudflare_auth]
 }
 
 # An out-of-range KDF memory is refused at plan time.

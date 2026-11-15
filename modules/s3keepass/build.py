@@ -1,6 +1,6 @@
 """Stage the s3keepass server for Lambda: a released s3keepass from PyPI (pure Python, no dependencies).
 
-    python3 build.py "s3keepass==0.1.1" <out dir>
+    python3 build.py "s3keepass==0.1.2" <out dir>
 
 Terraform runs it at plan time (main.tf). Prints {"dir": "<out dir>"} for Terraform's external data source.
 """

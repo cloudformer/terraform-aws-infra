@@ -20,11 +20,20 @@ variable "console_password" {
 
 module "keepass" {
   source  = "cloudformer/infra/aws//modules/s3keepass"
-  version = "~> 0.1"
+  version = "~> 0.2.0"
 
-  project_name          = "mykeepass"
-  console_auth_username = "admin"
-  console_auth_password = var.console_password # 16+ characters
+  project_name = "mykeepass"
+
+  http_auth = {
+    enabled  = true
+    username = "admin"
+    password = var.console_password # 16+ characters
+  }
+  cloudflare_auth = {
+    enabled = false
+    team    = "myteam"
+    aud     = "CHANGE-ME"
+  }
 }
 
 output "console_url" {
@@ -39,6 +48,24 @@ terraform init && terraform apply
 
 Open `console_url`, sign in with the user / password above, then create a vault or upload a `.kdbx` from KeePassXC.
 Each vault has its own master password (and optional key file), which never leaves the browser.
+
+## Sign-in: password, Cloudflare Access, or both
+
+Two methods, each `enabled` true or false; a request passes when any method that is on accepts it, and plan stops
+when none is on. Turning one off keeps its other fields, so turning it on again is one word.
+
+| | `http_auth` | `cloudflare_auth` |
+|---|---|---|
+| How | user + password (HTTP Basic); the page asks for them | the JWT Cloudflare Access adds in front of the URL |
+| Fields | `username`, `password` (16+) | `team` (`<team>.cloudflareaccess.com`), `aud` (the Access application's AUD tag) |
+| Identity in access records | the user | the email |
+
+Moving to Cloudflare: turn both on, check the Cloudflare address works, then turn `http_auth` off. With Cloudflare
+alone the Function URL opened directly serves nothing, the page included: the Lambda checks the JWT's signature
+against the team's public keys, its `aud`, issuer and expiry.
+
+Cloudflare side: an Access application for your hostname (its policy decides who may sign in), and that hostname
+forwarding to the Function URL with the Host header set to the Function URL's host (a Worker, or an Origin Rule).
 
 ## Advanced settings: the new-vault template
 
@@ -71,7 +98,7 @@ set it to move to a newer s3keepass without waiting for a new module version.
 
 ## Requirements
 
-- Terraform ≥ 1.5, AWS provider 6.x, AWS credentials.
+- Terraform ≥ 1.9, AWS provider 6.x, AWS credentials.
 - `python3` with `pip` on the machine running Terraform: the Lambda package is built there at plan time.
 
 ## Notes
@@ -83,4 +110,6 @@ set it to move to a newer s3keepass without waiting for a new module version.
   `ResourceAlreadyExistsException` for `/aws/lambda/<project_name>-lambda`. Take it over, then apply again:
   `terraform import 'module.<name>.module.server.aws_cloudwatch_log_group.this' /aws/lambda/<project_name>-lambda`.
 - `project_name` must be unique per AWS account; it names every resource.
+- 0.2.0 replaced `console_auth_username` / `console_auth_password` with `http_auth = { enabled = true, username,
+  password }`; the deployed resources stay the same.
 - Inputs and outputs: see the Inputs / Outputs tabs on the Registry.

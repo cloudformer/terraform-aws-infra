@@ -100,10 +100,14 @@ module "server" {
   url_auth             = var.function_url_auth
 
   environment = {
-    USER_NAME = var.console_auth_username
-    PASSWORD  = var.console_auth_password
-    CONSOLE   = var.console ? "1" : "0"
-    BUCKET    = module.bucket.name
+    HTTP_AUTH       = var.http_auth.enabled ? "1" : "0"
+    USER_NAME       = var.http_auth.enabled ? var.http_auth.username : ""
+    PASSWORD        = var.http_auth.enabled ? var.http_auth.password : ""
+    CLOUDFLARE_AUTH = var.cloudflare_auth.enabled ? "1" : "0"
+    CLOUDFLARE_TEAM = var.cloudflare_auth.enabled ? var.cloudflare_auth.team : ""
+    CLOUDFLARE_AUD  = var.cloudflare_auth.enabled ? var.cloudflare_auth.aud : ""
+    CONSOLE         = var.console ? "1" : "0"
+    BUCKET          = module.bucket.name
   }
 
   policy_statements = [

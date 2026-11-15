@@ -8,30 +8,52 @@ variable "project_name" {
   }
 }
 
-variable "console_auth_username" {
-  description = "Web UI sign-in user (HTTP Basic), also the owner name in access records. Each vault still needs its own master password."
-  type        = string
-}
-
-variable "console_auth_password" {
-  description = "Web UI sign-in password (HTTP Basic). At least 16 characters."
-  type        = string
-  sensitive   = true
+# Sign-in: two methods, each on or off; a request passes when any method that is on accepts it (at least one must be
+# on). Each vault still needs its own master password, which never leaves the browser.
+variable "http_auth" {
+  description = "Sign-in with a user and password (HTTP Basic); the page asks for them. The user is also the owner name in access records. enabled = false: the other fields are ignored."
+  type = object({
+    enabled  = bool
+    username = optional(string, "")
+    password = optional(string, "") # at least 16 characters: the web UI is a public URL
+  })
+  default   = { enabled = false }
+  sensitive = true
 
   validation {
-    condition     = length(var.console_auth_password) >= 16
-    error_message = "console_auth_password must be at least 16 characters (the web UI is a public URL)."
+    condition     = !var.http_auth.enabled || (length(var.http_auth.username) > 0 && length(var.http_auth.password) >= 16)
+    error_message = "http_auth: enabled needs a username and a password of at least 16 characters (the web UI is a public URL)."
+  }
+}
+
+variable "cloudflare_auth" {
+  description = "Sign-in through Cloudflare Access in front of the Function URL: the Lambda checks the JWT Cloudflare adds (team's public keys, aud, issuer, expiry); the email in it is the owner name in access records. With http_auth off, the URL opened directly serves nothing, the page included. enabled = false: the other fields are ignored."
+  type = object({
+    enabled = bool
+    team    = optional(string, "") # <team>.cloudflareaccess.com
+    aud     = optional(string, "") # the Access application's AUD tag
+  })
+  default = { enabled = false }
+
+  validation {
+    condition     = !var.cloudflare_auth.enabled || (can(regex("^[a-z0-9-]+$", var.cloudflare_auth.team)) && length(var.cloudflare_auth.aud) > 0)
+    error_message = "cloudflare_auth: enabled needs team (the <team> in <team>.cloudflareaccess.com: lowercase letters, digits, '-') and aud (the Access application's AUD tag)."
+  }
+
+  validation {
+    condition     = var.cloudflare_auth.enabled || nonsensitive(var.http_auth.enabled)
+    error_message = "Turn on http_auth or cloudflare_auth (or both): a vault page with no sign-in is never deployed."
   }
 }
 
 variable "s3keepass_version" {
   description = "s3keepass release deployed from PyPI (s3keepass==<version>). The default is the version this module was tested with; set another to upgrade without a new module version."
   type        = string
-  default     = "0.1.1"
+  default     = "0.1.2"
 
   validation {
     condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+$", var.s3keepass_version))
-    error_message = "s3keepass_version: X.Y.Z, e.g. 0.1.1."
+    error_message = "s3keepass_version: X.Y.Z, e.g. 0.1.2."
   }
 }
 
@@ -48,7 +70,7 @@ variable "console" {
 }
 
 variable "function_url_auth" {
-  description = "How the Function URL is protected. NONE = public URL, user/password (HTTP Basic) is checked. AWS_IAM = AWS checks a SigV4 signature + IAM permission first; the browser UI cannot sign requests, so it is unusable in this mode."
+  description = "How the Function URL is protected. NONE = public URL, the Lambda checks http_auth / cloudflare_auth. AWS_IAM = AWS checks a SigV4 signature + IAM permission first; the browser UI cannot sign requests, so it is unusable in this mode."
   type        = string
   default     = "NONE"
 
