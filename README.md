@@ -7,6 +7,8 @@ Terraform modules for the [IdleFree](https://cloudformer.github.io/) series, pub
 |---|---|
 | [s3rds](modules/s3rds) | Serverless MySQL / PostgreSQL / SQLite-compatible database on Lambda + S3 |
 | [s3keepass](modules/s3keepass) | KeePass vaults (.kdbx) on S3 with a web UI; decrypted only in the browser |
+| [s3shift](modules/s3shift) | Serverless Redshift: Redshift SQL on DuckDB in a Lambda, over your own S3 and RDS data |
+| [lambdaflow](modules/lambdaflow) | Serverless Airflow: Airflow 3 DAG files on Lambda, Step Functions, EventBridge Scheduler and DynamoDB |
 
 ## Layout
 

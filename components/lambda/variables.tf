@@ -59,9 +59,69 @@ variable "policy_statements" {
 variable "url_auth" {
   description = "Function URL authorization: NONE (public URL, the function checks callers) or AWS_IAM (SigV4)."
   type        = string
+  default     = "NONE"
 
   validation {
     condition     = contains(["NONE", "AWS_IAM"], var.url_auth)
     error_message = "url_auth must be NONE or AWS_IAM."
   }
+}
+
+variable "layers" {
+  description = "Layer version ARNs (dependencies the zip does not carry)."
+  type        = list(string)
+  default     = []
+}
+
+variable "ephemeral_storage_mb" {
+  description = "/tmp size in MB, 512 to 10240."
+  type        = number
+  default     = 512
+
+  validation {
+    condition     = var.ephemeral_storage_mb >= 512 && var.ephemeral_storage_mb <= 10240
+    error_message = "ephemeral_storage_mb: 512 to 10240."
+  }
+}
+
+variable "vpc_subnet_ids" {
+  description = "Private subnets to run in; [] = no VPC (the default: S3 and the internet directly)."
+  type        = list(string)
+  default     = []
+}
+
+variable "vpc_security_group_ids" {
+  description = "Security groups when vpc_subnet_ids is set."
+  type        = list(string)
+  default     = []
+}
+
+variable "function_url" {
+  description = "Give the function a Function URL. false = invoked only by other AWS services (Step Functions, S3, ...)."
+  type        = bool
+  default     = true
+}
+
+variable "role_name" {
+  description = "IAM role name; null = <function_name>-role."
+  type        = string
+  default     = null
+}
+
+variable "policy_name" {
+  description = "The role's inline policy name; null = <function_name>-policy."
+  type        = string
+  default     = null
+}
+
+variable "policy_arns" {
+  description = "Managed policies attached to the role as they are."
+  type        = list(string)
+  default     = []
+}
+
+variable "log_retention_days" {
+  description = "Days the function's CloudWatch logs are kept."
+  type        = number
+  default     = 14
 }
