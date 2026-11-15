@@ -1,5 +1,5 @@
 # Smoke test for modules/s3keepass: `make smoke PROJECT=s3keepass` runs it against the deployed examples/s3keepass
-# (a copy in .smoke/s3keepass whose source is this repo's modules/s3keepass). Needs TF_VAR_console_password.
+# (a copy in .smoke/s3keepass whose source is this repo's modules/s3keepass). TF_VAR_console_password: set by the Makefile.
 # Checks the real deployment answers: the web UI, sign-in, the vault list, the new-vault template, and a vault file
 # saved, listed, read back and deleted (bytes only: the KDBX crypto runs in the browser and is tested in s3keepass).
 import base64

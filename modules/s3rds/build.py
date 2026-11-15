@@ -1,6 +1,6 @@
 """Stage the s3rds server for Lambda: a released s3rds[server] from PyPI, as Linux wheels.
 
-    python3 build.py "s3rds[server]==0.3.5" <out dir>
+    python3 build.py "s3rds[server]==0.3.6" <out dir>
 
 Terraform runs it at plan time (main.tf). Prints {"dir": "<out dir>"} for Terraform's external data source.
 """

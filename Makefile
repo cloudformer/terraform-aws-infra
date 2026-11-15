@@ -1,12 +1,15 @@
 # make test                      mock tests: tests/mock/, every module, no AWS (CI runs this on push / PR)
 # make smoke PROJECT=<project>   smoke test: apply examples/<project> on this repo's code, run
-#                                tests/smoke/<project>.py, destroy. Needs AWS_PROFILE and the example's
-#                                TF_VAR_* (e.g. TF_VAR_db_password)
+#                                tests/smoke/<project>.py, destroy. Needs AWS_PROFILE
 # make release PROJECT=<project> VERSION=vX.Y.Z
 #                                test (all mock tests), smoke the project being released, then tag and push
 #                                (the Registry picks the tag up)
 
 PROJECTS := $(basename $(notdir $(wildcard tests/smoke/*.py)))
+
+# the examples' sign-in passwords: a smoke deployment lives for a minute and is destroyed, so a fixed one does
+export TF_VAR_db_password      ?= smoke-test-password
+export TF_VAR_console_password ?= smoke-test-password
 
 .PHONY: test smoke release
 
