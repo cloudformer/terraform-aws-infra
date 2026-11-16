@@ -11,6 +11,9 @@ terraform {
 
 provider "aws" {
   region = "us-east-2" # credentials: AWS_PROFILE or the default chain
+  default_tags {
+    tags = { project = "s3keepass-example" } # tagged objects too (the custom template): s3_backup copies their tags
+  }
 }
 
 variable "console_password" {

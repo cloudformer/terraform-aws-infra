@@ -69,7 +69,8 @@ module "function" {
     PREFIXES      = jsonencode(var.prefixes)
   }
 
-  # read the source (only under prefixes), write the backup bucket; never delete anything
+  # read the source (only under prefixes), write the backup bucket; never delete anything.
+  # *Tagging: a copy carries the object's tags (e.g. a provider's default_tags), which needs both sides
   policy_statements = [
     {
       Effect    = "Allow"
@@ -79,12 +80,12 @@ module "function" {
     },
     {
       Effect   = "Allow"
-      Action   = ["s3:GetObject"]
+      Action   = ["s3:GetObject", "s3:GetObjectTagging"]
       Resource = [for p in var.prefixes : "${var.source_bucket_arn}/${p}*"]
     },
     {
       Effect   = "Allow"
-      Action   = ["s3:PutObject"]
+      Action   = ["s3:PutObject", "s3:PutObjectTagging"]
       Resource = "${module.bucket.arn}/*"
     }
   ]
