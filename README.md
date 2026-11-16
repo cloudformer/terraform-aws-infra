@@ -9,6 +9,8 @@ Terraform modules for the [IdleFree](https://cloudformer.github.io/) series, pub
 | [s3keepass](modules/s3keepass) | KeePass vaults (.kdbx) on S3 with a web UI; decrypted only in the browser |
 | [s3shift](modules/s3shift) | Serverless Redshift: Redshift SQL on DuckDB in a Lambda, over your own S3 and RDS data |
 | [lambdaflow](modules/lambdaflow) | Serverless Airflow: Airflow 3 DAG files on Lambda, Step Functions, EventBridge Scheduler and DynamoDB |
+| [lambdachecks](modules/lambdachecks) | Healthchecks (cron job monitoring), unchanged, on Lambda with its database on s3rds |
+| [lambdavault](modules/lambdavault) | Serverless HashiCorp Vault: the official binary in a Lambda, data in S3, unseal key in SSM (or KMS) |
 
 ## Layout
 

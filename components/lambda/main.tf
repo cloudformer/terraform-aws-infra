@@ -47,10 +47,12 @@ resource "aws_iam_role_policy_attachment" "vpc" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
-# ---------------- the function ----------------
+# ---------------- the function: a zip (handler, runtime, layers) or a container image (image_uri) ----------------
 resource "aws_lambda_function" "this" {
   function_name    = var.function_name
   role             = aws_iam_role.this.arn
+  package_type     = var.package_type
+  image_uri        = var.image_uri
   runtime          = var.runtime
   architectures    = [var.architecture]
   handler          = var.handler

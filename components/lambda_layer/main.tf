@@ -13,4 +13,10 @@ resource "aws_lambda_layer_version" "this" {
   source_code_hash         = data.archive_file.this.output_base64sha256
   compatible_runtimes      = var.compatible_runtimes
   compatible_architectures = var.compatible_architectures
+
+  # the zip's path depends on where the module was installed (a local checkout, .terraform/modules/...):
+  # only its content (source_code_hash) publishes a new version
+  lifecycle {
+    ignore_changes = [filename]
+  }
 }

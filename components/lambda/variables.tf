@@ -3,12 +3,33 @@ variable "function_name" {
   type        = string
 }
 
+variable "package_type" {
+  description = "Zip (filename, handler, runtime, layers) or Image (image_uri; the image carries everything else)."
+  type        = string
+  default     = "Zip"
+
+  validation {
+    condition     = contains(["Zip", "Image"], var.package_type)
+    error_message = "package_type must be Zip or Image."
+  }
+}
+
+variable "image_uri" {
+  description = "package_type = Image: the ECR image, <repository url>:<tag>, built for architecture."
+  type        = string
+  default     = null
+}
+
 variable "handler" {
-  type = string
+  description = "package_type = Zip: module.function, e.g. lambda_function.lambda_handler."
+  type        = string
+  default     = null
 }
 
 variable "runtime" {
-  type = string
+  description = "package_type = Zip: e.g. python3.12."
+  type        = string
+  default     = null
 }
 
 variable "architecture" {
@@ -23,13 +44,15 @@ variable "architecture" {
 }
 
 variable "filename" {
-  description = "The deployment zip."
+  description = "package_type = Zip: the deployment zip."
   type        = string
+  default     = null
 }
 
 variable "source_code_hash" {
-  description = "base64 SHA-256 of the zip; a change redeploys the code."
+  description = "package_type = Zip: base64 SHA-256 of the zip; a change redeploys the code."
   type        = string
+  default     = null
 }
 
 variable "timeout" {
@@ -68,7 +91,7 @@ variable "url_auth" {
 }
 
 variable "layers" {
-  description = "Layer version ARNs (dependencies the zip does not carry)."
+  description = "Layer version ARNs (dependencies the zip does not carry); package_type = Image: none."
   type        = list(string)
   default     = []
 }
