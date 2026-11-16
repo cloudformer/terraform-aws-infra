@@ -31,3 +31,8 @@ output "function_name" {
   description = "The Vault function"
   value       = module.vault.function_name
 }
+
+output "backup_bucket" {
+  description = "s3_backup: the bucket holding the snapshots; null when s3_backup is off."
+  value       = one(module.backup[*].bucket)
+}

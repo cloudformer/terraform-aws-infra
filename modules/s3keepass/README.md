@@ -96,6 +96,17 @@ It applies to vaults created from then on; an existing vault takes new KDF setti
 The function runs `s3keepass` from PyPI. `s3keepass_version` defaults to the release this module was tested with;
 set it to move to a newer s3keepass without waiting for a new module version.
 
+## Backup (optional)
+
+```hcl
+  s3_backup = { enabled = true, every = "1d", keep_days = 30 } # every: <n>h or <n>d
+```
+
+Snapshots of the vaults and the custom template (not the access records) into `<bucket>-backup`, one folder per run (`<UTC time>/`, e.g. `2026-11-15T0800Z/`),
+deleted after `keep_days`; no S3 versioning involved. The backup bucket follows `force_destroy`. Restore a
+snapshot: `aws s3 sync s3://<bucket>-backup/<snapshot>/ s3://<bucket>/`.
+Creates `<bucket>-backup`, a copier Lambda and an EventBridge Scheduler schedule (≈ $0 for small data).
+
 ## Requirements
 
 - Terraform ≥ 1.9, AWS provider 6.x, AWS credentials.

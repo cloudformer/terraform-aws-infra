@@ -64,7 +64,7 @@ answers. Two ways, picked by `seal.type`:
 
 | Resource | Name |
 |---|---|
-| S3 bucket (private, SSE-S3, TLS only, versioned): Vault's storage, encrypted by Vault before it is written | `<project_name>-data-<account id>`, or `bucket` |
+| S3 bucket (private, SSE-S3, TLS only): Vault's storage, encrypted by Vault before it is written | `<project_name>-data-<account id>`, or `bucket` |
 | ECR repository: the Vault image (official `hashicorp/vault` + AWS Lambda Web Adapter), arm64 and x86_64 | `<project_name>` |
 | Lambda, container image, reserved concurrency 1 (the s3 backend has no lock: one Vault process ever writes), no URL | `<project_name>-lambda` |
 | Lambda + Function URL (`VAULT_ADDR`): the proxy, queues concurrent callers for the one Vault (up to 25 s) | `<project_name>-proxy-lambda` |
@@ -76,6 +76,17 @@ The image and the proxy come from `lambdavault` on PyPI (`lambdavault/server` is
 `lambdavault/proxy` the proxy). `lambdavault_version` defaults to the release this module was tested with; set it
 to move to a newer lambdavault without waiting for a new module version. The image tag is the content hash of
 the build context: a plan rebuilds nothing unless that changed.
+
+## Backup (optional)
+
+```hcl
+  s3_backup = { enabled = true, every = "1d", keep_days = 30 } # every: <n>h or <n>d
+```
+
+Snapshots of Vault's whole bucket (a snapshot taken during a write may catch it half done; writes are rare) into `<bucket>-backup`, one folder per run (`<UTC time>/`, e.g. `2026-11-15T0800Z/`),
+deleted after `keep_days`; no S3 versioning involved. The backup bucket follows `force_destroy`. Restore a
+snapshot: `aws s3 sync s3://<bucket>-backup/<snapshot>/ s3://<bucket>/`.
+Creates `<bucket>-backup`, a copier Lambda and an EventBridge Scheduler schedule (≈ $0 for small data).
 
 ## Requirements
 

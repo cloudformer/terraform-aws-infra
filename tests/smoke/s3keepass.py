@@ -1,7 +1,8 @@
 # Smoke test for modules/s3keepass: `make smoke PROJECT=s3keepass` runs it against the deployed examples/s3keepass
 # (a copy in .smoke/s3keepass whose source is this repo's modules/s3keepass). TF_VAR_console_password: set by the Makefile.
 # Checks the real deployment answers: the web UI, sign-in, the vault list, the new-vault template, and a vault file
-# saved, listed, read back and deleted (bytes only: the KDBX crypto runs in the browser and is tested in s3keepass).
+# saved, listed, read back and deleted (bytes only: the KDBX crypto runs in the browser and is tested in s3keepass);
+# s3_backup: one snapshot taken on demand holds that vault file. Needs AWS credentials (AWS_PROFILE) and boto3.
 import base64
 import json
 import os
@@ -9,6 +10,8 @@ import subprocess
 import sys
 import urllib.error
 import urllib.request
+
+import boto3
 
 out = json.loads(subprocess.run(["terraform", "-chdir=.smoke/s3keepass", "output", "-json"],
                                 check=True, capture_output=True, text=True).stdout)
@@ -53,6 +56,18 @@ etag = h.get("etag") or json.loads(body).get("etag")
 
 status, body, _ = call("GET", "/api/vaults/smoke")
 check("read it back", status == 200 and body == data, f"HTTP {status}")
+
+# s3_backup: take a snapshot now instead of waiting for the schedule; it must hold the vault just saved
+backup = out["backup_bucket"]["value"]
+lam, s3 = boto3.client("lambda", region_name="us-east-2"), boto3.client("s3", region_name="us-east-2")
+r = lam.invoke(FunctionName="s3keepass-example-backup-lambda")
+result = json.loads(r["Payload"].read())
+check("backup snapshot taken", r["StatusCode"] == 200 and "FunctionError" not in r and result.get("objects", 0) >= 2,
+      json.dumps(result)[:200])
+keys = [o["Key"] for o in s3.list_objects_v2(Bucket=backup, Prefix=result["snapshot"] + "/").get("Contents", [])]
+saved = [k for k in keys if k.endswith("smoke.kdbx")]
+check("snapshot holds the vault file", len(saved) == 1 and s3.get_object(Bucket=backup, Key=saved[0])["Body"].read() == data,
+      f"{backup}: {keys}")
 
 status, body, _ = call("DELETE", "/api/vaults/smoke", headers={"if-match": etag})
 check("delete it", status in (200, 204), f"HTTP {status} {body[:200]!r}")

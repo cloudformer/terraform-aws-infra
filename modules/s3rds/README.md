@@ -64,6 +64,17 @@ PostgreSQL, SQLite, SQLAlchemy and Django: see the [s3rds README](https://github
 The functions run `s3rds[server]` from PyPI. `s3rds_version` defaults to the release this module was tested
 with; set it to move to a newer s3rds without waiting for a new module version.
 
+## Backup (optional)
+
+```hcl
+  s3_backup = { enabled = true, every = "1d", keep_days = 30 } # every: <n>h or <n>d
+```
+
+Snapshots of the databases (`db/`) into `<project_name>-db-<account id>-backup`, one folder per run (`<UTC time>/`, e.g. `2026-11-15T0800Z/`),
+deleted after `keep_days`; no S3 versioning involved. The backup bucket follows `force_destroy`. Restore a
+snapshot: `aws s3 sync s3://<project_name>-db-<account id>-backup/<snapshot>/ s3://<project_name>-db-<account id>/`.
+Creates `<bucket>-backup`, a copier Lambda and an EventBridge Scheduler schedule (≈ $0 for small data).
+
 ## Requirements
 
 - Terraform ≥ 1.5, AWS provider 6.x, AWS credentials.

@@ -17,3 +17,8 @@ output "db_prefix" {
   description = "Database file prefix: s3://<db_bucket>/<db_prefix><database>.sqlite"
   value       = local.prefix
 }
+
+output "backup_bucket" {
+  description = "s3_backup: the bucket holding the snapshots; null when s3_backup is off."
+  value       = one(module.backup[*].bucket)
+}

@@ -26,6 +26,19 @@ module "bucket" {
   force_destroy = var.force_destroy
 }
 
+# ---------------- backup (s3_backup): snapshots of db/ into <bucket>-backup ----------------
+module "backup" {
+  count             = var.s3_backup.enabled ? 1 : 0
+  source            = "../../components/s3_backup"
+  name              = "${var.project_name}-db-backup"
+  source_bucket     = module.bucket.name
+  source_bucket_arn = module.bucket.arn
+  prefixes          = [local.prefix]
+  every             = var.s3_backup.every
+  keep_days         = var.s3_backup.keep_days
+  force_destroy     = var.force_destroy
+}
+
 # ---------------- packaging: s3rds[server] from PyPI (s3rds.server + the pinned engine, Linux wheels) ----------------
 data "external" "build" {
   program = ["python3", "${path.module}/build.py", local.package, "${path.module}/.build/server"]

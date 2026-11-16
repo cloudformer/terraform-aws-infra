@@ -73,6 +73,20 @@ resource "aws_s3_object" "custom_template" {
   content_type = "application/json"
 }
 
+# ---------------- backup (s3_backup): snapshots of the vaults and the custom template into <bucket>-backup ----------------
+# log/ is left out: access records only grow, and they expire on their own
+module "backup" {
+  count             = var.s3_backup.enabled ? 1 : 0
+  source            = "../../components/s3_backup"
+  name              = "${var.project_name}-backup"
+  source_bucket     = module.bucket.name
+  source_bucket_arn = module.bucket.arn
+  prefixes          = [local.prefix, local.custom]
+  every             = var.s3_backup.every
+  keep_days         = var.s3_backup.keep_days
+  force_destroy     = var.force_destroy
+}
+
 # ---------------- packaging: s3keepass from PyPI (s3keepass.server: the vault API + the web UI) ----------------
 data "external" "build" {
   program = ["python3", "${path.module}/build.py", local.package, "${path.module}/.build/server"]

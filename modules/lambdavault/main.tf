@@ -2,7 +2,8 @@
 # key in SSM Parameter Store (seal = ssm, free) or a KMS key (seal = kms). ≈ $0 when idle.
 # https://github.com/cloudformer/lambdavault
 #
-#   S3 bucket        Vault's storage (s3 backend; Vault encrypts everything before it is written), versioned
+#   S3 bucket        Vault's storage (s3 backend; Vault encrypts everything before it is written)
+#   s3_backup        optional scheduled snapshots into <bucket>-backup
 #   ECR repository   the Vault image, arm64 + x86_64, built and pushed with Docker on the machine running Terraform
 #   Lambda vault     Vault + Lambda Web Adapter; reserved concurrency 1 (the s3 backend has no lock), no URL
 #   Lambda proxy     the Function URL (VAULT_ADDR): queues callers for the one Vault; seal = ssm: stores the key at init
@@ -28,7 +29,20 @@ module "bucket" {
   source        = "../../components/s3_bucket"
   name          = local.bucket
   force_destroy = var.force_destroy
-  versioning    = true # a safety net for overwritten objects, not Vault's KV versions
+}
+
+# ---------------- backup (s3_backup): snapshots of the whole bucket into <bucket>-backup ----------------
+# Vault writes many small objects; a snapshot taken during a write may catch it half done
+module "backup" {
+  count             = var.s3_backup.enabled ? 1 : 0
+  source            = "../../components/s3_backup"
+  name              = "${local.p}-backup"
+  source_bucket     = module.bucket.name
+  source_bucket_arn = module.bucket.arn
+  prefixes          = [""]
+  every             = var.s3_backup.every
+  keep_days         = var.s3_backup.keep_days
+  force_destroy     = var.force_destroy
 }
 
 # ---------------- the seal (seal = kms only; seal = ssm keeps the key in SSM, written at init) ----------------

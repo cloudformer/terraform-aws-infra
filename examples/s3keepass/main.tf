@@ -40,6 +40,13 @@ module "keepass" {
     aud     = "CHANGE-ME" # the Access application's AUD tag
   }
 
+  # snapshots of the vaults into <bucket>-backup; off by default
+  s3_backup = {
+    enabled   = true
+    every     = "1d" # <n>h or <n>d
+    keep_days = 30
+  }
+
   # optional, defaults shown
   # s3keepass_version  = "X.Y.Z"  # unset: the s3keepass release this module version ships with
   # bucket             = null   # <project_name>-vaults-<account id>
@@ -57,4 +64,8 @@ output "console_url" {
 
 output "bucket" {
   value = module.keepass.bucket
+}
+
+output "backup_bucket" {
+  value = module.keepass.backup_bucket
 }

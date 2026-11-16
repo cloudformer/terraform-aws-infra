@@ -72,3 +72,18 @@ variable "build_image" {
   type        = bool
   default     = true
 }
+
+variable "s3_backup" {
+  description = "Scheduled snapshots of the bucket into <bucket>-backup, no S3 versioning: every <n>h or <n>d (1h, 6h, 1d, 7d ...), each one at <bucket>-backup/<UTC time>/<key>, deleted after keep_days. Restore one: aws s3 sync s3://<bucket>-backup/<snapshot>/ s3://<bucket>/. The backup bucket follows force_destroy. enabled = false: nothing is created."
+  type = object({
+    enabled   = bool
+    every     = optional(string, "1d")
+    keep_days = optional(number, 30)
+  })
+  default = { enabled = false }
+
+  validation {
+    condition     = can(regex("^[1-9][0-9]*[hd]$", var.s3_backup.every)) && var.s3_backup.keep_days >= 1
+    error_message = "s3_backup: every is <n>h or <n>d (e.g. 6h, 1d), keep_days at least 1."
+  }
+}

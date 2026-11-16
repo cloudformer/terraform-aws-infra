@@ -24,6 +24,12 @@ override_data {
   values = { region = "us-east-2" }
 }
 
+# s3_backup on: its scheduler group reads the account too
+override_data {
+  target = module.backup[0].module.scheduler.data.aws_caller_identity.me
+  values = { account_id = "123456789012" }
+}
+
 # a real provider leaves the repository URL unknown at plan time: give it, so the image reference can be checked
 override_resource {
   target          = module.ecr.aws_ecr_repository.this
@@ -63,6 +69,11 @@ run "defaults" {
   assert {
     condition     = module.bucket.name == "test-data-123456789012"
     error_message = "bucket name should be <project_name>-data-<account id>"
+  }
+
+  assert {
+    condition     = length(module.bucket.versioning_ids) == 0
+    error_message = "Vault's bucket should not be versioned (Vault never reads old versions; s3_backup is the safety net)"
   }
 
   assert {
@@ -155,4 +166,61 @@ run "invalid_seal_rejected" {
   }
 
   expect_failures = [var.seal]
+}
+
+# s3_backup off (the default): no backup bucket, no copier, no schedule.
+run "backup_off" {
+  command = plan
+
+  module {
+    source = "./modules/lambdavault"
+  }
+
+  assert {
+    condition     = length(module.backup) == 0 && output.backup_bucket == null
+    error_message = "s3_backup should be off by default"
+  }
+}
+
+# s3_backup on: <bucket>-backup, the copier, a schedule at the chosen frequency.
+run "backup_on" {
+  command = plan
+
+  module {
+    source = "./modules/lambdavault"
+  }
+
+  variables {
+    s3_backup = { enabled = true, every = "6h", keep_days = 7 }
+  }
+
+  assert {
+    condition     = output.backup_bucket == "test-data-123456789012-backup"
+    error_message = "the backup bucket should be <bucket>-backup"
+  }
+
+  assert {
+    condition     = module.backup[0].function_name == "test-backup-lambda"
+    error_message = "the copier should be named after the project"
+  }
+
+  assert {
+    condition     = module.backup[0].schedule_expression == "rate(6 hours)"
+    error_message = "every = 6h should schedule rate(6 hours)"
+  }
+}
+
+# A frequency that is not <n>h or <n>d is refused at plan time.
+run "backup_every_rejected" {
+  command = plan
+
+  module {
+    source = "./modules/lambdavault"
+  }
+
+  variables {
+    s3_backup = { enabled = true, every = "daily" }
+  }
+
+  expect_failures = [var.s3_backup]
 }
