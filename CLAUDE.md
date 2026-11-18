@@ -25,6 +25,7 @@ examples/<p>/    a minimal call of modules/<p> from the Registry (stable); lates
                  make smoke deploys a copy in .smoke/<p>/ with source = this repo's modules/<p>
 tests/mock/      <p>.tftest.hcl: terraform test with mocked providers, plan only, no AWS
 tests/smoke/     <p>.py: run against the deployed examples/<p>
+tests/unit/      pytest for a component's own code, against a fake S3 (moto), no AWS: test_s3_backup.py
 Makefile         test / smoke PROJECT=<p> / release PROJECT=<p> VERSION=vX.Y.Z
 ```
 

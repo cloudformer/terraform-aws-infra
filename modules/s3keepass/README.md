@@ -102,10 +102,10 @@ set it to move to a newer s3keepass without waiting for a new module version.
   s3_backup = { enabled = true, every = "1d", keep_days = 30 } # every: <n>h or <n>d
 ```
 
-Snapshots of the vaults and the custom template (not the access records) into `<bucket>-backup`, one folder per run (`<UTC time>/`, e.g. `2026-11-15T0800Z/`),
-deleted after `keep_days`; no S3 versioning involved. The backup bucket follows `force_destroy`. Restore a
-snapshot: `aws s3 sync s3://<bucket>-backup/<snapshot>/ s3://<bucket>/`.
-Creates `<bucket>-backup`, a copier Lambda and an EventBridge Scheduler schedule (≈ $0 for small data).
+Snapshots of the vaults and the custom template (not the access records) into `<bucket>-backup`, one folder per snapshot (`<UTC time>/`, e.g. `2026-11-15T080000Z/`),
+taken only when something changed or the newest is half of `keep_days` old (`every` is how often that is checked, at most half of `keep_days`), deleted after `keep_days`; no S3 versioning involved. The backup bucket follows `force_destroy`. Restore a
+snapshot: `aws s3 sync s3://<bucket>-backup/<snapshot>/ s3://<bucket>/ --exclude "manifest.json"`.
+Creates `<bucket>-backup`, a copier Lambda and an EventBridge Scheduler schedule (≈ $0 for small data). Rules and restore in detail: [components/s3_backup](https://github.com/cloudformer/terraform-aws-infra/tree/main/components/s3_backup).
 
 ## Requirements
 

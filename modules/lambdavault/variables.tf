@@ -74,7 +74,7 @@ variable "build_image" {
 }
 
 variable "s3_backup" {
-  description = "Scheduled snapshots of the bucket into <bucket>-backup, no S3 versioning: every <n>h or <n>d (1h, 6h, 1d, 7d ...), each one at <bucket>-backup/<UTC time>/<key>, deleted after keep_days. Restore one: aws s3 sync s3://<bucket>-backup/<snapshot>/ s3://<bucket>/. The backup bucket follows force_destroy. enabled = false: nothing is created."
+  description = "Snapshots of the bucket into <bucket>-backup, no S3 versioning: checked every <n>h or <n>d (1h, 6h, 1d, 7d ...), at most half of keep_days; a full snapshot at <bucket>-backup/<UTC time>/<key> + manifest.json only when something changed, or when the newest is half of keep_days old (rounded down, at least 1 day); deleted after keep_days. Restore one: aws s3 sync s3://<bucket>-backup/<snapshot>/ s3://<bucket>/ --exclude manifest.json. The backup bucket follows force_destroy. enabled = false: nothing is created."
   type = object({
     enabled   = bool
     every     = optional(string, "1d")
@@ -83,7 +83,10 @@ variable "s3_backup" {
   default = { enabled = false }
 
   validation {
-    condition     = can(regex("^[1-9][0-9]*[hd]$", var.s3_backup.every)) && var.s3_backup.keep_days >= 1
-    error_message = "s3_backup: every is <n>h or <n>d (e.g. 6h, 1d), keep_days at least 1."
+    condition = can(regex("^[1-9][0-9]*[hd]$", var.s3_backup.every)) && var.s3_backup.keep_days >= 1 && try(
+      tonumber(trimsuffix(trimsuffix(var.s3_backup.every, "h"), "d")) * (endswith(var.s3_backup.every, "h") ? 1 : 24)
+      <= max(1, floor(var.s3_backup.keep_days / 2)) * 24, false
+    )
+    error_message = "s3_backup: every is <n>h or <n>d (e.g. 6h, 1d), at most half of keep_days (rounded down, at least 1d); keep_days at least 1."
   }
 }

@@ -1,14 +1,20 @@
-# Scheduled snapshots of one bucket into <source bucket>-backup, no S3 versioning needed:
-#   bucket    <source bucket>-backup, snapshots at <UTC time>/<key>, expired after keep_days
-#   Lambda    <name>-lambda (backup.py, in this component): copies every object under prefixes
-#   schedule  EventBridge Scheduler group <name>, one schedule every <every> (1h, 6h, 1d, 7d, ...)
-# Restore one snapshot:  aws s3 sync s3://<source bucket>-backup/<snapshot>/ s3://<source bucket>/
+# Snapshots of one bucket into <source bucket>-backup, taken only when something changed; no S3 versioning needed:
+#   bucket    <source bucket>-backup, snapshots at <UTC time>/<key> + manifest.json, expired after keep_days
+#   Lambda    <name>-lambda (backup.py, in this component): checks the objects under prefixes; copies all of them
+#             when there is no snapshot yet, they changed, or the newest is half of keep_days old
+#   schedule  EventBridge Scheduler group <name>, one check every <every> (1h, 6h, 1d, 7d, ...)
+# Rules and restore: README.md
 
 locals {
   bucket = "${var.source_bucket}-backup"
   n      = tonumber(substr(var.every, 0, length(var.every) - 1))
   unit   = endswith(var.every, "h") ? "hour" : "day"
   rate   = "rate(${local.n} ${local.unit}${local.n == 1 ? "" : "s"})"
+  hours  = local.n * (local.unit == "hour" ? 1 : 24)
+
+  # a fresh snapshot is forced after half of keep_days (whole days, at least 1), so one exists before the
+  # newest expires; that needs a check at least that often
+  force_after_days = max(1, floor(var.keep_days / 2))
 }
 
 # ---------------- the backup bucket: snapshots expire after keep_days ----------------
@@ -35,6 +41,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "this" {
   }
 
   lifecycle {
+    precondition {
+      condition     = local.hours <= local.force_after_days * 24
+      error_message = "s3_backup: every ${var.every} is longer than ${local.force_after_days}d (half of keep_days ${var.keep_days}); a snapshot could expire before the next one. Check more often or keep longer."
+    }
     precondition {
       condition     = length(local.bucket) <= 63
       error_message = "s3_backup: the backup bucket ${local.bucket} is longer than 63 characters; use a shorter project_name or bucket."
@@ -64,13 +74,14 @@ module "function" {
   reserved_concurrency = -1
 
   environment = {
-    SOURCE_BUCKET = var.source_bucket
-    BACKUP_BUCKET = module.bucket.name
-    PREFIXES      = jsonencode(var.prefixes)
+    SOURCE_BUCKET     = var.source_bucket
+    BACKUP_BUCKET     = module.bucket.name
+    PREFIXES          = jsonencode(var.prefixes)
+    FORCE_AFTER_HOURS = local.force_after_days * 24
   }
 
-  # read the source (only under prefixes), write the backup bucket; never delete anything.
-  # *Tagging: a copy carries the object's tags (e.g. a provider's default_tags), which needs both sides
+  # read the source (only under prefixes), find the newest snapshot (list + manifest.json), write the backup bucket;
+  # never delete anything. *Tagging: a copy carries the object's tags (e.g. a provider's default_tags), which needs both sides
   policy_statements = [
     {
       Effect    = "Allow"
@@ -82,6 +93,16 @@ module "function" {
       Effect   = "Allow"
       Action   = ["s3:GetObject", "s3:GetObjectTagging"]
       Resource = [for p in var.prefixes : "${var.source_bucket_arn}/${p}*"]
+    },
+    {
+      Effect   = "Allow"
+      Action   = ["s3:ListBucket"]
+      Resource = module.bucket.arn
+    },
+    {
+      Effect   = "Allow"
+      Action   = ["s3:GetObject"]
+      Resource = "${module.bucket.arn}/*/manifest.json"
     },
     {
       Effect   = "Allow"

@@ -224,3 +224,18 @@ run "backup_every_rejected" {
 
   expect_failures = [var.s3_backup]
 }
+
+# Checked less often than half of keep_days (7 → 3d): the newest snapshot could expire before the next one.
+run "backup_every_too_long_rejected" {
+  command = plan
+
+  module {
+    source = "./modules/lambdavault"
+  }
+
+  variables {
+    s3_backup = { enabled = true, every = "4d", keep_days = 7 }
+  }
+
+  expect_failures = [var.s3_backup]
+}
