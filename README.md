@@ -24,7 +24,18 @@ components/
 tests/
   mock/                checks every project's plan without AWS, on every push
   smoke/               deploys a project for real, then destroys it, before a release
+  unit/                a component's own code against a fake S3 (s3_backup), no AWS
 .github/workflows/     runs the mock tests on GitHub
 ```
 
 Release: `make release PROJECT=<project> VERSION=vX.Y.Z` runs both tests, then pushes the tag; the Registry publishes that version.
+
+## Planned
+
+- **cloudflare_front** (TODO): a separate module that puts a Function URL behind a domain on Cloudflare: the proxied DNS
+  record, a Cloudflare Access application and policy (who may sign in), and a Worker route + variable that forwards
+  the hostname to the Function URL (the free plan cannot rewrite the Host header otherwise). Its output feeds a
+  project's `cloudflare_auth`, and a new Function URL after a destroy / apply updates the Worker with it. Separate so
+  that nobody who skips Cloudflare needs the Cloudflare provider or a token.
+
+MIT, see [LICENSE](LICENSE).
