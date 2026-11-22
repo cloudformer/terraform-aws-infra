@@ -11,6 +11,8 @@ Terraform modules for the [IdleFree](https://cloudformer.github.io/) series, pub
 | [lambdaflow](modules/lambdaflow) | Serverless Airflow: Airflow 3 DAG files on Lambda, Step Functions, EventBridge Scheduler and DynamoDB |
 | [lambdachecks](modules/lambdachecks) | Healthchecks (cron job monitoring), unchanged, on Lambda with its database on s3rds |
 | [lambdavault](modules/lambdavault) | Serverless HashiCorp Vault: the official binary in a Lambda, data in S3, unseal key in SSM (or KMS) |
+| [lambdazap](modules/lambdazap) | OWASP ZAP scans of your own sites from a web UI; scanners are fresh CodeBuild instances you start and shut down |
+| [lambdakali](modules/lambdakali) | A serverless Kali command console; start a scanner, type shell commands, they run on a fresh CodeBuild instance |
 
 ## Layout
 

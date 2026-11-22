@@ -4,6 +4,10 @@
 locals {
   image    = "${var.repository_url}:${var.tag}"
   registry = split("/", var.repository_url)[0]
+  platform = { arm64 = "linux/arm64", x86_64 = "linux/amd64" }
+  # one `docker buildx build ... --push` per architecture, joined into the provisioner's script
+  builds = join("\n", [for a in var.architectures :
+  "docker buildx build --platform ${local.platform[a]} --provenance=false ${join(" ", [for k, val in var.build_args : "--build-arg ${k}=${val}"])} -t \"$IMAGE-${a}\" --push \"$CONTEXT\""])
 }
 
 # the provider's credentials log Docker in to ECR: no AWS CLI needed, and the token (valid 12 hours for every
@@ -20,7 +24,7 @@ ephemeral "aws_ecr_authorization_token" "this" {
 resource "terraform_data" "image" {
   count            = var.build ? 1 : 0
   input            = local.image
-  triggers_replace = [local.image]
+  triggers_replace = [local.image, local.builds]
 
   provisioner "local-exec" {
     command = <<-EOT
@@ -31,8 +35,7 @@ resource "terraform_data" "image" {
       echo '{}' > "$DOCKER_CONFIG/config.json"
       [ -d "$HOME/.docker/cli-plugins" ] && ln -s "$HOME/.docker/cli-plugins" "$DOCKER_CONFIG/cli-plugins"
       printf '%s' "$ECR_PASSWORD" | docker login --username AWS --password-stdin "$REGISTRY"
-      docker buildx build --platform linux/arm64 --provenance=false -t "$IMAGE-arm64" --push "$CONTEXT"
-      docker buildx build --platform linux/amd64 --provenance=false -t "$IMAGE-x86_64" --push "$CONTEXT"
+      ${local.builds}
     EOT
     environment = {
       ECR_PASSWORD = ephemeral.aws_ecr_authorization_token.this[0].password

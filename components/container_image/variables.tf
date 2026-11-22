@@ -18,3 +18,20 @@ variable "build" {
   type        = bool
   default     = true
 }
+
+variable "build_args" {
+  description = "Docker build args passed to every architecture, e.g. { KALI_TIER = \"common\" }. {} = none."
+  type        = map(string)
+  default     = {}
+}
+
+variable "architectures" {
+  description = "Instruction sets to build and push (tags <tag>-arm64 / <tag>-x86_64). Fewer = faster, less ECR storage."
+  type        = list(string)
+  default     = ["arm64", "x86_64"]
+
+  validation {
+    condition     = length(var.architectures) > 0 && alltrue([for a in var.architectures : contains(["arm64", "x86_64"], a)])
+    error_message = "architectures: a non-empty subset of [\"arm64\", \"x86_64\"]."
+  }
+}

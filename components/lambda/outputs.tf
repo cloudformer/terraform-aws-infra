@@ -18,3 +18,8 @@ output "function_arn" {
 output "role_name" {
   value = aws_iam_role.this.name
 }
+
+output "policy" {
+  description = "The role's inline policy (JSON)."
+  value       = aws_iam_role_policy.this.policy
+}
