@@ -54,7 +54,7 @@ variable "cloudflare_auth" {
 variable "lambdakali_version" {
   description = "lambdakali release deployed from PyPI (lambdakali==<version>): the Lambda and the scan images are built from it. The default is the version this module was tested with; set another to upgrade without a new module version."
   type        = string
-  default     = "0.1.4"
+  default     = "0.1.5"
 
   validation {
     condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+$", var.lambdakali_version))
