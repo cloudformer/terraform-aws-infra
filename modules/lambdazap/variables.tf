@@ -9,12 +9,12 @@ variable "project_name" {
 }
 
 variable "allowed_targets" {
-  description = "The hosts that may be scanned (yours, or ones you are authorized to test): example.com, app.example.com:8443, or *.example.com for its subdomains. A scan of any other host is refused before it is queued."
+  description = "The hosts that may be scanned (yours, or ones you are authorized to test): example.com, app.example.com:8443, or *.example.com for its subdomains. A scan of any other host is refused before it is queued. [\"*\"] turns the allowlist off (any host; sign-in is then the only gate) — handy for testing, tighten it after."
   type        = list(string)
 
   validation {
-    condition     = length(var.allowed_targets) > 0 && alltrue([for t in var.allowed_targets : can(regex("^(\\*\\.)?[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*(:[0-9]{1,5})?$", t))])
-    error_message = "allowed_targets: at least one host, lowercase, no scheme or path: example.com, app.example.com:8443 or *.example.com."
+    condition     = length(var.allowed_targets) > 0 && alltrue([for t in var.allowed_targets : t == "*" || can(regex("^(\\*\\.)?[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*(:[0-9]{1,5})?$", t))])
+    error_message = "allowed_targets: at least one host, lowercase, no scheme or path: example.com, app.example.com:8443 or *.example.com. Use \"*\" alone to turn the allowlist off."
   }
 }
 
@@ -58,7 +58,7 @@ variable "cloudflare_auth" {
 variable "lambdazap_version" {
   description = "lambdazap release deployed from PyPI (lambdazap==<version>): the Lambda and the scan image are built from it. The default is the version this module was tested with; set another to upgrade without a new module version."
   type        = string
-  default     = "0.1.1"
+  default     = "0.1.2"
 
   validation {
     condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+$", var.lambdazap_version))
