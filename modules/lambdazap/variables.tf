@@ -58,7 +58,7 @@ variable "cloudflare_auth" {
 variable "lambdazap_version" {
   description = "lambdazap release deployed from PyPI (lambdazap==<version>): the Lambda and the scan image are built from it. The default is the version this module was tested with; set another to upgrade without a new module version."
   type        = string
-  default     = "0.1.6"
+  default     = "0.1.7"
 
   validation {
     condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+$", var.lambdazap_version))
