@@ -58,7 +58,7 @@ variable "cloudflare_auth" {
 variable "lambdazap_version" {
   description = "lambdazap release deployed from PyPI (lambdazap==<version>): the Lambda and the scan image are built from it. The default is the version this module was tested with; set another to upgrade without a new module version."
   type        = string
-  default     = "0.1.2"
+  default     = "0.1.4"
 
   validation {
     condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+$", var.lambdazap_version))
@@ -102,7 +102,7 @@ variable "max_scanners" {
 variable "idle_shutdown_minutes" {
   description = "A scanner shuts down by itself after this many minutes without a task (1 to max_session_minutes); Shut down in the UI stops it at once."
   type        = number
-  default     = 15
+  default     = 10
 
   validation {
     condition     = var.idle_shutdown_minutes >= 1 && var.idle_shutdown_minutes <= var.max_session_minutes
