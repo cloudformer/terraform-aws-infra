@@ -2,7 +2,7 @@
 
     python3 build.py "lambdazap==0.1.0" <out dir>
 
-    <out dir>/code   lambdazap itself (--no-deps: it has none; boto3 comes with the Lambda runtime)
+    <out dir>/code   lambdazap plus its deps idlefree-auth / idlefree-ui (boto3 comes with the Lambda runtime)
                      code/lambdazap/server   lambda_function.py, index.html: the web UI + API Lambda
                      code/lambdazap/image    Dockerfile, ...: the Docker build context of the scan image (ZAP)
 
@@ -41,7 +41,7 @@ def main():
         shutil.rmtree(out, ignore_errors=True)
         # no .pyc: they embed timestamps, the zip hash would change every plan
         r = subprocess.run([sys.executable, "-m", "pip", "-q", "--disable-pip-version-check", "install",
-                            "--target", code, "--no-compile", "--no-deps", spec], capture_output=True, text=True)
+                            "--target", code, "--no-compile", spec], capture_output=True, text=True)
         if r.returncode:
             sys.exit(f"build.py: pip failed: {r.stderr.strip()[-500:]}")
         shutil.rmtree(os.path.join(code, "bin"), ignore_errors=True)
