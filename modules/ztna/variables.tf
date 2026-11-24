@@ -8,39 +8,8 @@ variable "project_name" {
   }
 }
 
-variable "networks" {
-  description = <<-EOT
-    The network profiles a jump can be launched into — the console's Network dropdown. Each is a subnet + security
-    group(s) (and whether to give it a public IP). Admins define these in IaC; the web page can only pick one.
-      { database = { subnets = ["subnet-…"], security_group_ids = ["sg-…"] }
-        internet = { subnets = ["subnet-public-…"], security_group_ids = ["sg-…"], public = true } }
-    Each profile's security group decides exactly which hosts/ports the jump can reach.
-  EOT
-  type = map(object({
-    subnets            = list(string)
-    security_group_ids = list(string)
-    public             = optional(bool, false)
-  }))
-
-  validation {
-    condition     = length(var.networks) > 0 && alltrue([for n in var.networks : length(n.subnets) > 0 && length(n.security_group_ids) > 0])
-    error_message = "networks: at least one profile, each with a non-empty subnets and security_group_ids."
-  }
-}
-
-variable "default_network" {
-  description = "The network profile the console offers first; must be a key of networks. Empty = the first one."
-  type        = string
-  default     = ""
-
-  validation {
-    condition     = var.default_network == "" || contains(keys(var.networks), var.default_network)
-    error_message = "default_network must be one of the networks keys."
-  }
-}
-
 variable "targets" {
-  description = "The map-mode target dropdown: private endpoints you forward to your laptop, as host:port, e.g. [\"db-primary.xxx:3306\", \"cache-01.xxx:6379\"]. Only hosts a jump's security group allows will actually connect; a custom host:port can also be typed."
+  description = "Static extras for the map-mode target dropdown, as host:port. The console also discovers the RDS and ElastiCache endpoints of the jump's VPC live; a custom host:port can always be typed."
   type        = list(string)
   default     = []
 }

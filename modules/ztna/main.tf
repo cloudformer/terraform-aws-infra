@@ -6,12 +6,9 @@ data "aws_caller_identity" "me" {}
 data "aws_region" "current" {}
 
 locals {
-  p               = var.project_name
-  package         = "ztna==${var.ztna_version}"
-  ssh_user        = "ec2-user" # Amazon Linux 2023
-  default_network = var.default_network != "" ? var.default_network : keys(var.networks)[0]
-  # the NETWORKS env the Lambda reads: {name = {subnets, groups, public}}
-  networks_env = { for k, v in var.networks : k => { subnets = v.subnets, groups = v.security_group_ids, public = v.public } }
+  p        = var.project_name
+  package  = "ztna==${var.ztna_version}"
+  ssh_user = "ec2-user" # Amazon Linux 2023
 }
 
 # ---------------- lease bucket ----------------
@@ -105,7 +102,7 @@ resource "aws_launch_template" "jump" {
     cat > /etc/ztna.env <<'ENV'
     BUCKET=${module.bucket.name}
     IDLE_MINUTES=${var.idle_shutdown_minutes}
-    REGION=${data.aws_region.current.name}
+    REGION=${data.aws_region.current.region}
     ENV
     cat > /usr/local/bin/ztna-agent <<'AGENT'
     ${file("${path.module}/jump-agent.sh")}
@@ -136,15 +133,16 @@ resource "aws_launch_template" "jump" {
 module "server" {
   source = "../../components/lambda"
 
-  function_name      = "${local.p}-lambda"
-  filename           = data.archive_file.code.output_path
-  source_code_hash   = data.archive_file.code.output_base64sha256
-  handler            = "ztna.server.lambda_function.lambda_handler"
-  runtime            = "python3.12"
-  architecture       = var.architecture
-  timeout            = 30
-  memory_size        = 256
-  log_retention_days = var.log_retention_days
+  function_name        = "${local.p}-lambda"
+  filename             = data.archive_file.code.output_path
+  source_code_hash     = data.archive_file.code.output_base64sha256
+  handler              = "ztna.server.lambda_function.lambda_handler"
+  runtime              = "python3.12"
+  architecture         = var.architecture
+  timeout              = 30
+  memory_size          = 256
+  reserved_concurrency = -1
+  log_retention_days   = var.log_retention_days
 
   function_url = true
   url_auth     = var.function_url_auth
@@ -154,8 +152,6 @@ module "server" {
     PROJECT               = local.p
     LAUNCH_TEMPLATE_ID    = aws_launch_template.jump.id
     INSTANCE_TYPE         = var.instance_type
-    NETWORKS              = jsonencode(local.networks_env)
-    DEFAULT_NETWORK       = local.default_network
     TARGETS               = jsonencode(var.targets)
     SSH_USER              = local.ssh_user
     IDLE_SHUTDOWN_MINUTES = tostring(var.idle_shutdown_minutes)
@@ -169,9 +165,13 @@ module "server" {
     CLOUDFLARE_AUD        = var.cloudflare_auth.aud
   }
 
-  # launch / describe / terminate jumps, pass the jump role, read-write the lease
+  # launch / describe / terminate jumps, discover the launch dropdowns and targets, pass the jump role, read-write the lease
   policy_statements = [
     { Effect = "Allow", Action = ["ec2:RunInstances", "ec2:CreateTags", "ec2:DescribeInstances"], Resource = "*" },
+    { Effect = "Allow", Action = ["ec2:DescribeVpcs", "ec2:DescribeSubnets", "ec2:DescribeSecurityGroups",
+      "rds:DescribeDBInstances", "elasticache:DescribeCacheClusters", "elasticache:DescribeCacheSubnetGroups",
+      "ssm:DescribeSessions"],
+    Resource = "*" },
     { Effect = "Allow", Action = ["ec2:TerminateInstances"], Resource = "*",
     Condition = { StringEquals = { "ec2:ResourceTag/Project" = local.p } } },
     { Effect = "Allow", Action = ["iam:PassRole"], Resource = aws_iam_role.jump.arn },

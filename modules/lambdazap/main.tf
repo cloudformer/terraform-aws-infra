@@ -95,12 +95,13 @@ module "ecr" {
   name   = local.p
 }
 
-# built on this machine with Docker, pushed for both architectures; only when the build context changes
+# built on this machine with Docker, pushed only for the architecture the Lambda and scanners run on
 module "image" {
   source         = "../../components/container_image"
   repository_url = module.ecr.url
   tag            = data.external.build.result.tag # the build context's content hash (build.py)
   context        = data.external.build.result.image
+  architectures  = [var.architecture]
   build          = var.build_image
 }
 
