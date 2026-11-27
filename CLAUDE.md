@@ -55,6 +55,21 @@ Makefile         test / smoke PROJECT=<p> / release PROJECT=<p> VERSION=vX.Y.Z
 9. **Docs live in one place**: `modules/<p>/README.md` (the Registry shows the same file). The root README,
    project READMEs, PyPI pages and the org profile only link to it.
 
+## Secrets (the constitution, settled 2026-11-27)
+
+What a module's variables and env may carry:
+
+| Kind | In tfvars / variables | In the Lambda env | At runtime |
+|---|---|---|---|
+| Plain config (region, names, flags) | the real value | the real value | used as-is |
+| Ordinary console sign-in (`http_auth`) | the real password (tfvars, gitignored) — no retrofit | value | compared directly |
+| Important consoles (s3keepass, vault UI) | nothing — Cloudflare Access in front | — | email verification |
+| Machine bootstrap (the ONE shared CF service token) | **only its SSM reference** (`ssm:/idlefree/cf-service-token` or the ARN) | that pointer string | program reads SSM via its own IAM role (the module grants read on exactly that parameter) |
+| Business secrets (Claude/GitHub/PyPI/game tokens) | nothing, ever | only `VAULT_ADDR` + the vault role name | program logs in with its IAM identity (vault `aws` auth), gets a 15-min token, reads its own kv path |
+
+Never bake a secret value into tfvars-for-machines, env, images or state. lambdavault serves
+running programs only (Lambda/EC2/CodeBuild) — it is not a terraform value source.
+
 ## How we work
 
 - Discuss first, build after an explicit go ("开始 / 建吧 / 可以了").
